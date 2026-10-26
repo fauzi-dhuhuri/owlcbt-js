@@ -1,0 +1,298 @@
+// This is your Prisma schema file for owlcbt-js
+// Database schema for OwlCBT - Modern Computer Based Test Platform
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -------------------------------------------------------------
+// 1. PENGGUNA, PERAN, & KELAS (USERS & ACADEMIC STRUCTURE)
+// -------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  TEACHER
+  PROCTOR
+  STUDENT
+}
+
+model User {
+  id           String    @id @default(cuid())
+  username     String    @unique // NISN untuk siswa, NIP/Username untuk guru/admin
+  passwordHash String
+  name         String
+  role         Role      @default(STUDENT)
+  avatarUrl    String?
+  phone        String?
+  email        String?
+  gender       String?   // "L" / "P"
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relasi khusus siswa
+  classId      String?
+  class        Class?    @relation(fields: [classId], references: [id], onDelete: SetNull)
+  examSessions ExamSession[]
+
+  // Relasi khusus guru/pembuat bank soal
+  questionBanks QuestionBank[] @relation("CreatedQuestionBanks")
+
+  @@index([role])
+  @@index([classId])
+}
+
+model Class {
+  id        String   @id @default(cuid())
+  name      String   // Misal: "X-MIPA-1", "XII-IPS-2"
+  level     String   // Misal: "X", "XI", "XII"
+  major     String?  // Misal: "MIPA", "IPS", "TKJ"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  students User[]
+  exams    Exam[]   @relation("ClassExams")
+
+  @@index([level])
+}
+
+// -------------------------------------------------------------
+// 2. MATA PELAJARAN & BANK SOAL (SUBJECTS & QUESTION BANKS)
+// -------------------------------------------------------------
+
+model Subject {
+  id            String         @id @default(cuid())
+  code          String         @unique // Misal: "MAT", "BIN", "BIG"
+  name          String         // Misal: "Matematika Wajib"
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  questionBanks QuestionBank[]
+}
+
+model QuestionBank {
+  id          String   @id @default(cuid())
+  code        String   @unique // Misal: "BNK-MAT-XII-2026"
+  title       String   // Misal: "Bank Soal UAS Ganjil Matematika XII"
+  description String?  @db.Text
+
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+
+  createdById String
+  createdBy   User     @relation("CreatedQuestionBanks", fields: [createdById], references: [id], onDelete: Restrict)
+
+  questions   Question[]
+  exams       Exam[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([subjectId])
+}
+
+// -------------------------------------------------------------
+// 3. BUTIR SOAL & OPSI (QUESTIONS & OPTIONS)
+// -------------------------------------------------------------
+
+enum QuestionType {
+  MULTIPLE_CHOICE       // Pilihan Ganda Tunggal (1 jawaban benar)
+  MULTIPLE_RESPONSE     // Pilihan Ganda Kompleks (Bisa > 1 jawaban benar / AKM)
+  TRUE_FALSE            // Benar / Salah
+  ESSAY                 // Esai Uraian Bebas
+}
+
+enum MediaType {
+  NONE
+  IMAGE
+  AUDIO
+  VIDEO
+}
+
+model Question {
+  id          String       @id @default(cuid())
+  bankId      String
+  bank        QuestionBank @relation(fields: [bankId], references: [id], onDelete: Cascade)
+  
+  type        QuestionType @default(MULTIPLE_CHOICE)
+  content     String       @db.Text // Teks soal (HTML / Markdown / KaTeX)
+  
+  mediaType   MediaType    @default(NONE)
+  mediaUrl    String?      // Path gambar/audio pendukung soal
+
+  weight      Float        @default(1.0) // Bobot nilai soal
+  orderIndex  Int          @default(0)
+
+  options     QuestionOption[]
+  studentAnswers StudentAnswer[]
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([bankId])
+}
+
+model QuestionOption {
+  id         String   @id @default(cuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  label      String   // Misal: "A", "B", "C", "D", "E"
+  content    String   @db.Text
+  mediaUrl   String?
+  isCorrect  Boolean  @default(false)
+  orderIndex Int      @default(0)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([questionId])
+}
+
+// -------------------------------------------------------------
+// 4. PENJADWALAN & SESI UJIAN (EXAMS & STUDENT SESSIONS)
+// -------------------------------------------------------------
+
+enum ExamStatus {
+  DRAFT       // Belum dipublikasikan
+  SCHEDULED   // Terjadwal
+  ACTIVE      // Sedang berjalan
+  COMPLETED   // Telah selesai
+  ARCHIVED    // Diarsipkan
+}
+
+model Exam {
+  id                 String       @id @default(cuid())
+  title              String       // Misal: "Penilaian Akhir Semester Ganjil 2026"
+  bankId             String
+  bank               QuestionBank @relation(fields: [bankId], references: [id], onDelete: Restrict)
+
+  token              String?      // Token 6 karakter dinamis untuk masuk ujian
+  durationMinutes    Int          // Durasi ujian dalam menit (misal: 90)
+  startTime          DateTime     // Waktu mulai ujian dapat diakses
+  endTime            DateTime     // Waktu batas akhir ujian
+
+  randomizeQuestions Boolean      @default(true) // Acak susunan soal per siswa
+  randomizeOptions   Boolean      @default(true) // Acak susunan opsi pilihan ganda
+  showResultImmediate Boolean     @default(false) // Tampilkan nilai langsung setelah submit
+  passingGrade       Float?       // KKM (Kriteria Ketuntasan Minimal)
+
+  status             ExamStatus   @default(DRAFT)
+  classes            Class[]      @relation("ClassExams")
+  sessions           ExamSession[]
+
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@index([bankId])
+  @@index([status])
+}
+
+enum SessionStatus {
+  NOT_STARTED    // Siswa terdaftar tetapi belum menekan mulai
+  IN_PROGRESS    // Sedang mengerjakan ujian
+  SUBMITTED      // Siswa telah menyelesaikan dan mengirim ujian
+  FORCE_STOPPED  // Dihentikan paksa oleh pengawas/proktor
+}
+
+model ExamSession {
+  id                   String          @id @default(cuid())
+  examId               String
+  exam                 Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  studentId            String
+  student              User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  status               SessionStatus   @default(NOT_STARTED)
+  startedAt            DateTime?       // Timestamp saat siswa menekan tombol "Mulai Ujian"
+  submittedAt          DateTime?       // Timestamp saat siswa menyelesaikan ujian
+  
+  // Menyimpan susunan ID soal yang diacak khusus untuk sesi siswa ini
+  // Format: ["clxyz...1", "clxyz...2"]
+  assignedQuestionOrder Json?
+
+  // Counter pelanggaran (misal: buka tab lain, keluar fullscreen)
+  violationsCount      Int             @default(0)
+
+  // Nilai
+  multipleChoiceScore  Float?          @default(0)
+  essayScore           Float?          @default(0)
+  finalScore           Float?
+  isGraded             Boolean         @default(false)
+
+  ipAddress            String?
+  userAgent            String?
+
+  answers              StudentAnswer[]
+  violationLogs        ExamViolationLog[]
+
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  @@unique([examId, studentId]) // 1 siswa hanya memiliki 1 sesi per jadwal ujian
+  @@index([examId])
+  @@index([studentId])
+  @@index([status])
+}
+
+model StudentAnswer {
+  id                String       @id @default(cuid())
+  sessionId         String
+  session           ExamSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  questionId        String
+  question          Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  // Pilihan opsi jawaban siswa (disimpan ID opsi, mendukung 1 atau multi pilihan)
+  selectedOptionIds Json?
+
+  // Jawaban untuk soal esai / uraian
+  essayAnswer       String?      @db.Text
+
+  // Status ragu-ragu
+  isDoubtful        Boolean      @default(false)
+
+  // Skor per butir soal setelah dikoreksi (otomatis/manual)
+  scoreEarned       Float?       @default(0)
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@unique([sessionId, questionId])
+  @@index([sessionId])
+}
+
+// -------------------------------------------------------------
+// 5. AUDIT INTEGRITAS & PELANGGARAN UJIAN (ANTI-CHEAT LOGS)
+// -------------------------------------------------------------
+
+model ExamViolationLog {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  action    String      // "TAB_SWITCH", "FULLSCREEN_EXIT", "COPY_PASTE_ATTEMPT"
+  message   String?
+  timestamp DateTime    @default(now())
+
+  @@index([sessionId])
+}
+
+// -------------------------------------------------------------
+// 6. PENGATURAN SISTEM (SYSTEM SETTINGS)
+// -------------------------------------------------------------
+
+model SystemSetting {
+  id             String   @id @default(cuid())
+  schoolName     String   @default("SMA / SMK / SMP Negeri")
+  schoolAddress  String?
+  headmasterName String?
+  logoUrl        String?
+  timezone       String   @default("Asia/Jakarta")
+  updatedAt      DateTime @updatedAt
+}

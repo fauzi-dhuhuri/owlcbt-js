@@ -4,6 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Loader2 } from "lucide-react";
 
+/**
+ * Tombol Logout Khusus Portal Siswa.
+ *
+ * Memanggil endpoint `/api/auth/logout` untuk menghapus cookie autentikasi
+ * dan mengarahkan kembali ke halaman login.
+ */
 export default function StudentLogoutButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);

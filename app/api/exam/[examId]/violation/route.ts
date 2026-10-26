@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentStudent } from "@/lib/auth-helper";
 
+/**
+ * Endpoint Pencatatan Pelanggaran Anti-Cheat (Tab Switch / Window Blur / Fullscreen Exit).
+ *
+ * Menggunakan Prisma Transaction untuk membuat log insiden di `ExamViolationLog`
+ * dan menaikkan penghitung `violationsCount` pada sesi pengerjaan siswa secara atomik.
+ */
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ examId: string }> }

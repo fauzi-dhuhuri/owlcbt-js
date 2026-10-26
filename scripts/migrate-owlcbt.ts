@@ -6,6 +6,17 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";
 
+/**
+ * OwlCBT Database Migration Utility
+ *
+ * Skrip ini membaca file SQL dump (MySQL) dari aplikasi CBT legacy,
+ * melakukan tokenisasi ekspresi VALUES tanpa ketergantungan library eksternal,
+ * dan memetakan datanya ke skema PostgreSQL Prisma OwlCBT.
+ *
+ * Cara penggunaan:
+ * npx tsx scripts/migrate-owlcbt.ts /path/to/dump.sql
+ */
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });

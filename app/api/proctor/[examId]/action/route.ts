@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
+/**
+ * Menghasilkan token acak alfanumerik untuk verifikasi masuk ujian.
+ * Sengaja mengecualikan karakter yang membingungkan secara visual (misal 0/O, 1/I).
+ *
+ * @param length Panjang karakter token (default: 6)
+ * @returns Token acak seperti 'OWL482', 'CBT921'
+ */
 function generateRandomToken(length = 6): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Tanpa karakter membingungkan (0/O, 1/I)
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let result = "";
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -10,6 +17,15 @@ function generateRandomToken(length = 6): string {
   return result;
 }
 
+/**
+ * Endpoint Eksekusi Aksi Pengawasan Proktor.
+ *
+ * Mendukung 4 jenis kendali proktor secara realtime:
+ * 1. REGENERATE_TOKEN : Membuat token rilis baru untuk seluruh ruangan ujian
+ * 2. RESET_SESSION    : Membuka kunci login siswa tanpa menghapus jawaban tersimpan
+ * 3. ADD_TIME         : Memberikan kompensasi tambahan waktu pengerjaan (misal kendala teknis)
+ * 4. FORCE_SUBMIT     : Menyerahkan ujian secara paksa jika waktu habis atau pelanggaran berat
+ */
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ examId: string }> }

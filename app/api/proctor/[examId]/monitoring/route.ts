@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
+/**
+ * Endpoint Monitoring Status Peserta Ujian Realtime.
+ *
+ * Mengumpulkan data seluruh siswa terdaftar pada kelas yang diujikan beserta:
+ * - Status sesi (NOT_STARTED, IN_PROGRESS, SUBMITTED)
+ * - Progres jumlah soal yang telah dijawab
+ * - Sisa waktu pengerjaan aktual siswa
+ * - Log dan jumlah pelanggaran anti-cheat (violationsCount)
+ * - Statistik agregat ruangan (total siswa, aktif, selesai, belum mulai)
+ */
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ examId: string }> }

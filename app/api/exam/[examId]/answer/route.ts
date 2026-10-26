@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentStudent } from "@/lib/auth-helper";
 
+/**
+ * Endpoint Autosave Jawaban Siswa.
+ *
+ * Melakukan operasi upsert (insert jika baru, update jika sudah ada) pada tabel
+ * `StudentAnswer`. Memastikan hanya sesi dengan status IN_PROGRESS yang dapat
+ * menyimpan jawaban agar siswa tidak dapat memodifikasi jawaban setelah submit.
+ */
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ examId: string }> }

@@ -7,9 +7,16 @@ const globalForPrisma = globalThis as unknown as {
   pool: Pool | undefined;
 };
 
+/**
+ * Prisma Client & PostgreSQL Connection Pool Singleton
+ *
+ * Pola singleton ini mencegah 'connection exhaustion' pada database PostgreSQL
+ * akibat pembuatan instance PrismaClient baru secara berulang setiap kali
+ * Hot Module Replacement (HMR) berjalan di Next.js development server.
+ */
 const connectionString =
   process.env.DATABASE_URL ||
-  "postgresql://muhammadfauzidhuhuri@localhost:5432/owlcbt_db?schema=public";
+  "postgresql://postgres:postgres@localhost:5432/owlcbt_db?schema=public";
 
 const pool =
   globalForPrisma.pool ??
@@ -26,6 +33,7 @@ export const prisma =
     log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
   });
 
+// Simpan instance ke globalThis pada mode development
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
   globalForPrisma.pool = pool;

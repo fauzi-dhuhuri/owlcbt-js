@@ -4,7 +4,13 @@ import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { getCurrentAdmin } from "@/lib/auth-helper";
 
-// Normalisasi header agar fleksibel dengan berbagai variasi kolom Excel/CSV
+/**
+ * Normalisasi header dan nilai baris spreadsheet agar kompatibel dengan berbagai
+ * variasi penamaan kolom Excel/CSV dari berbagai aplikasi sekolah (misal: 'nisn', 'nis', 'no_peserta').
+ *
+ * @param raw Objek baris mentah dari parser XLSX
+ * @returns Data siswa yang telah dinormalisasi dengan nilai fallback yang aman
+ */
 function normalizeRow(raw: Record<string, any>) {
   const keys = Object.keys(raw);
   const getVal = (possibleKeys: string[]) => {
@@ -47,7 +53,11 @@ function normalizeRow(raw: Record<string, any>) {
   };
 }
 
-// 1. GET: Download Template Format Excel Siswa
+/**
+ * Endpoint Download File Template Excel Master Siswa.
+ *
+ * Menghasilkan file .xlsx siap pakai lengkap dengan baris contoh dan lebar kolom yang presisi.
+ */
 export async function GET(req: NextRequest) {
   try {
     const templateData = [
@@ -110,7 +120,13 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// 2. POST: Upload & Import Data Siswa dari File Excel / CSV
+/**
+ * Endpoint Impor Data Siswa dari File Excel (.xlsx, .xls) atau CSV.
+ *
+ * Menerima file multipart/form-data, membaca tabel data siswa, membuat kelas baru
+ * secara otomatis jika belum ada, dan melakukan upsert (buat siswa baru atau update data
+ * siswa yang sudah ada tanpa menghapus riwayat sesi ujian).
+ */
 export async function POST(req: NextRequest) {
   try {
     const admin = await getCurrentAdmin();

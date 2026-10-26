@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentStudent } from "@/lib/auth-helper";
 
+/**
+ * Endpoint Pengambilan Data Ruang Ujian (Soal, Sisa Waktu, Jawaban Tersimpan).
+ *
+ * Mengambil paket butir soal ujian dengan urutan yang sudah diacak untuk siswa ini.
+ * CATATAN KEAMANAN: Kolom `isCorrect` pada tabel QuestionOption sengaja tidak disertakan
+ * (dikecualikan) agar kunci jawaban tidak dapat dibaca dari inspect element / Network tab browser.
+ */
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ examId: string }> }

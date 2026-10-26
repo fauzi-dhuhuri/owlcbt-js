@@ -4,7 +4,11 @@ import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { getCurrentAdmin } from "@/lib/auth-helper";
 
-// Normalisasi baris data guru & staf
+/**
+ * Normalisasi data baris spreadsheet guru & staf.
+ * Memetakan variasi nama kolom (NIP, Nama, Jabatan/Role, Gender, Kontak)
+ * ke atribut model `User`.
+ */
 function normalizeTeacherRow(raw: Record<string, any>) {
   const keys = Object.keys(raw);
   const getVal = (possibleKeys: string[]) => {
@@ -56,7 +60,9 @@ function normalizeTeacherRow(raw: Record<string, any>) {
   };
 }
 
-// 1. GET: Download Template Format Excel Guru & Staf
+/**
+ * Endpoint Unduh Template Excel Data Guru & Staf Sekolah.
+ */
 export async function GET(req: NextRequest) {
   try {
     const templateData = [
@@ -118,7 +124,12 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// 2. POST: Upload & Import Data Guru & Staf
+/**
+ * Endpoint Impor Data Guru & Staf Sekolah dari File Spreadsheet.
+ *
+ * Mengunggah dan memproses data guru, proktor, atau administrator.
+ * Melakukan upsert data user dan mengamankan password menggunakan bcrypt.
+ */
 export async function POST(req: NextRequest) {
   try {
     const admin = await getCurrentAdmin();

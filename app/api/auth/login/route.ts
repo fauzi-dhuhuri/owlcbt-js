@@ -3,6 +3,16 @@ import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 
+/**
+ * Endpoint Login Multi-Role (Siswa, Guru, Proktor, Administrator).
+ *
+ * Memvalidasi kredensial pengguna menggunakan bcrypt, membuat HTTP-only cookie
+ * 'auth_session' yang aman, dan mengembalikan URL tujuan redirect sesuai peran:
+ * - ADMIN    -> /admin/students
+ * - TEACHER  -> /teacher
+ * - PROCTOR  -> /proctor
+ * - STUDENT  -> / (Portal Siswa)
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

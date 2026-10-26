@@ -1,6 +1,9 @@
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 
+/**
+ * Data payload yang tersimpan dalam HTTP-only cookie 'auth_session'.
+ */
 export interface AuthSession {
   id: string;
   username: string;
@@ -8,6 +11,12 @@ export interface AuthSession {
   role: "ADMIN" | "TEACHER" | "PROCTOR" | "STUDENT";
 }
 
+/**
+ * Mengambil data sesi pengguna yang saat ini sedang login
+ * berdasarkan cookie HTTP-only 'auth_session'.
+ *
+ * @returns {Promise<AuthSession | null>} Objek AuthSession jika valid, atau null jika belum login
+ */
 export async function getCurrentUser(): Promise<AuthSession | null> {
   try {
     const cookieStore = await cookies();
@@ -20,10 +29,18 @@ export async function getCurrentUser(): Promise<AuthSession | null> {
   }
 }
 
+/**
+ * Route guard khusus untuk portal siswa.
+ *
+ * Mengambil data siswa lengkap beserta relasi kelasnya.
+ * Memastikan bahwa pengguna yang login benar-benar berstatus sebagai siswa (role: STUDENT).
+ * Jika login sebagai Guru, Proktor, atau Admin, fungsi ini mengembalikan null.
+ *
+ * @returns {Promise<User | null>} Data siswa lengkap atau null jika bukan siswa
+ */
 export async function getCurrentStudent() {
   const currentUser = await getCurrentUser();
 
-  // Hanya izinkan jika user yang login saat ini memiliki role STUDENT
   if (currentUser) {
     if (currentUser.role !== "STUDENT") {
       return null;
@@ -57,10 +74,16 @@ export async function getCurrentStudent() {
   return null;
 }
 
+/**
+ * Route guard khusus untuk staf sekolah (Guru, Proktor, Administrator).
+ *
+ * Menolak akses jika pengguna belum login atau login sebagai Siswa (role: STUDENT).
+ *
+ * @returns {Promise<User | null>} Data pengguna staf atau null jika siswa/belum login
+ */
 export async function getCurrentStaff() {
   const currentUser = await getCurrentUser();
 
-  // Ditolak jika belum login atau login sebagai SISWA
   if (!currentUser || currentUser.role === "STUDENT") {
     return null;
   }
@@ -71,10 +94,17 @@ export async function getCurrentStaff() {
   return user;
 }
 
+/**
+ * Route guard berkeamanan tinggi khusus Administrator utama.
+ *
+ * Hanya mengizinkan pengguna dengan role ADMIN.
+ * Digunakan untuk melindungi Master Data Siswa, Guru, Pengaturan Sekolah, dan Impor File.
+ *
+ * @returns {Promise<User | null>} Data admin atau null jika bukan role ADMIN
+ */
 export async function getCurrentAdmin() {
   const currentUser = await getCurrentUser();
 
-  // Ditolak jika belum login atau role bukan ADMIN
   if (!currentUser || currentUser.role !== "ADMIN") {
     return null;
   }
@@ -84,5 +114,3 @@ export async function getCurrentAdmin() {
   });
   return user;
 }
-
-

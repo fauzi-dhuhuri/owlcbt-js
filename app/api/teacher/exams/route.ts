@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentStaff } from "@/lib/auth-helper";
 
-// Helper untuk token acak 6 karakter (misal: "OWL482", "KBT921")
+/**
+ * Menghasilkan token acak 6 karakter untuk ujian baru.
+ * Default prefix "OWL" diikuti 3 karakter unik acak (misal: "OWL482", "OWL921").
+ */
 function generateRandomToken(prefix = "OWL") {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let token = prefix;
@@ -12,7 +15,10 @@ function generateRandomToken(prefix = "OWL") {
   return token;
 }
 
-// 1. GET: Ambil daftar seluruh jadwal ujian beserta bank soal dan kelas
+/**
+ * Endpoint Pengambilan Daftar Jadwal Ujian, Bank Soal, dan Daftar Kelas.
+ * Memuat metadata relasi yang dibutuhkan untuk halaman manajemen jadwal ujian guru.
+ */
 export async function GET() {
   try {
     const staff = await getCurrentStaff();
@@ -97,7 +103,11 @@ export async function GET() {
   }
 }
 
-// 2. POST: Tambah Jadwal Ujian Baru
+/**
+ * Endpoint Tambah Jadwal Ujian Baru.
+ *
+ * Menerapkan validasi rentang waktu pengerjaan dan mengaitkan jadwal dengan bank soal serta kelas target.
+ */
 export async function POST(req: Request) {
   try {
     const staff = await getCurrentStaff();
@@ -176,7 +186,9 @@ export async function POST(req: Request) {
   }
 }
 
-// 3. PUT: Edit Pengaturan Jadwal Ujian
+/**
+ * Endpoint Perbarui Pengaturan Jadwal Ujian.
+ */
 export async function PUT(req: Request) {
   try {
     const staff = await getCurrentStaff();
@@ -252,7 +264,9 @@ export async function PUT(req: Request) {
   }
 }
 
-// 4. DELETE: Hapus Jadwal Ujian
+/**
+ * Endpoint Hapus Jadwal Ujian.
+ */
 export async function DELETE(req: Request) {
   try {
     const staff = await getCurrentStaff();
@@ -278,7 +292,9 @@ export async function DELETE(req: Request) {
   }
 }
 
-// 5. PATCH: Aksi cepat (Ganti Status, Regenerate Token)
+/**
+ * Endpoint Aksi Cepat Jadwal Ujian (Ubah Status Aktif / Regenerasi Token).
+ */
 export async function PATCH(req: Request) {
   try {
     const staff = await getCurrentStaff();

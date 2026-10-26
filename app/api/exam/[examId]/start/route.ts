@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentStudent } from "@/lib/auth-helper";
 
-// Algoritma Fisher-Yates Shuffle
+/**
+ * Mengacak urutan elemen array secara merata tanpa bias menggunakan algoritma
+ * Fisher-Yates (Knuth) Shuffle. Digunakan untuk menghasilkan susunan nomor soal
+ * yang unik bagi setiap peserta ketika opsi pengacakan aktif.
+ *
+ * @param array Array elemen yang akan diacak
+ * @returns Array baru dengan urutan acak
+ */
 function shuffle<T>(array: T[]): T[] {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -12,6 +19,13 @@ function shuffle<T>(array: T[]): T[] {
   return arr;
 }
 
+/**
+ * Endpoint Mulai / Konfirmasi Pengerjaan Ujian Siswa.
+ *
+ * Memverifikasi validitas token ujian, status ujian, dan menginisialisasi
+ * sesi pengerjaan (ExamSession). Jika opsi acak soal aktif, urutan butir soal
+ * disimpan di kolom `assignedQuestionOrder` agar konsisten sepanjang sesi siswa.
+ */
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ examId: string }> }

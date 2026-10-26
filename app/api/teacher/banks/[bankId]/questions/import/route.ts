@@ -3,7 +3,10 @@ import * as XLSX from "xlsx";
 import prisma from "@/lib/prisma";
 import { getCurrentStaff } from "@/lib/auth-helper";
 
-// Helper untuk normalisasi baris soal dari Excel/CSV
+/**
+ * Normalisasi data baris butir soal dari format spreadsheet Excel/CSV.
+ * Mendukung fleksibilitas header kolom soal, opsi pilihan A-E, kunci jawaban, dan bobot.
+ */
 function normalizeQuestionRow(raw: Record<string, any>) {
   const keys = Object.keys(raw);
   const getVal = (possibleKeys: string[]) => {
@@ -69,7 +72,11 @@ function normalizeQuestionRow(raw: Record<string, any>) {
   };
 }
 
-// Helper untuk parsing format teks / Word (e.g. Q:1) atau 1. Soal ... A) ... Kunci: A)
+/**
+ * Parser butir soal dari teks mentah (copy-paste dari Microsoft Word / Notepad).
+ * Mengenali pola penomoran (1., Soal 1:), opsi pilihan ganda (A., B., C.),
+ * kunci jawaban (KUNCI: A), dan tipe soal (JENIS: ESAI).
+ */
 function parseTextFormat(text: string) {
   const lines = text.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0);
   const questions: any[] = [];
@@ -140,7 +147,9 @@ function parseTextFormat(text: string) {
   return questions;
 }
 
-// 1. GET: Unduh Template Excel Soal
+/**
+ * Endpoint Unduh Template Excel Butir Soal.
+ */
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ bankId: string }> }
@@ -217,7 +226,10 @@ export async function GET(
   }
 }
 
-// 2. POST: Import Soal dari Excel / CSV atau Teks Format Word
+/**
+ * Endpoint Impor Butir Soal (Mendukung file Excel/CSV atau Teks Mentah Word).
+ * Menggunakan Prisma Transaction untuk memasukkan butir soal beserta opsi-opsinya secara atomik.
+ */
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ bankId: string }> }

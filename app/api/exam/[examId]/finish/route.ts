@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentStudent } from "@/lib/auth-helper";
 
+/**
+ * Endpoint Penyerahan Ujian Siswa (Finish & Auto-Grading).
+ *
+ * Mengunci sesi pengerjaan menjadi 'SUBMITTED', mencatat waktu serah, dan menjalankan
+ * algoritma auto-grading untuk butir Pilihan Ganda & Pilihan Ganda Kompleks.
+ * Jika terdapat soal Esai, sesi ditandai `isGraded: false` hingga guru melakukan koreksi manual.
+ */
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ examId: string }> }

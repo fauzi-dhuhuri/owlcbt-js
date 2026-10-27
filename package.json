@@ -14,7 +14,7 @@
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
-    "migrate:candy": "tsx scripts/migrate-owlcbt.ts",
+    "migrate:owl": "tsx scripts/migrate-owlcbt.ts",
     "release": "release-it",
     "release:dry": "release-it --dry-run"
   },
